@@ -41,12 +41,10 @@ API keys: Cloudflare dashboard → R2 → **Manage API tokens** → Create → *
 the **Access Key ID** and **Secret Access Key**. Your account ID is `5fd5c79d8b2f112743136f8c0207db41`.
 
 ### 2. Modal (API + GPU)
-Create the secret (pick a long random admin key: it's your admin login):
+Put the R2 keys in `cloud/.secrets.env` (git-ignored; the admin key and session secret are already generated there),
+then create the secret:
 ```
-cloud\.venv\Scripts\modal secret create fbclip ^
-  R2_ACCOUNT_ID=5fd5c79d8b2f112743136f8c0207db41 R2_ACCESS_KEY_ID=... R2_SECRET_ACCESS_KEY=... R2_BUCKET=fbclip ^
-  ADMIN_KEY=<long random string> SESSION_SECRET=<another long random string> ^
-  ALLOWED_ORIGINS=https://YOUR-SITE.vercel.app
+cloud\.venv\Scripts\python cloud\push_secret.py
 ```
 Deploy:
 ```

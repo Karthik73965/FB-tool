@@ -20,10 +20,12 @@ FPS_NUM, FPS_DEN = 30000, 1001
 SW, SH, OW, OH = 1920, 1080, 1080, 1920
 AW, AH = 640, 360            # analysis resolution
 STEP = 3                     # face analysis every 3rd frame
-RENDER_VERSION = "4"         # bump to invalidate cached chunks after changing the look
+RENDER_VERSION = "5"         # bump to invalidate cached chunks after changing the look
 
 
 def ffmpeg_exe():
+    if os.environ.get("REFRAME_FFMPEG"):     # cloud worker: NVENC-capable Linux ffmpeg (unset on desktop / CLI)
+        return os.environ["REFRAME_FFMPEG"]
     import imageio_ffmpeg
     return imageio_ffmpeg.get_ffmpeg_exe()
 
@@ -474,10 +476,12 @@ def render_chunk(job):
 
     # Frame-exact: seek ~2 s early (seek accuracy no longer matters), keep source timestamps (-copyts)
     # and select frames by timestamp, so chunk frame k is always source frame f0+k.
+    # Always scale to SW x SH: the frame reader below assumes that size (720p sources were read as garbage).
     ss = max(0.0, (f0 - 60) / FPS)
     thr = (f0 - 0.5) / FPS
     dec = subprocess.Popen([FF, "-v", "error"] + hwdec() + ["-ss", f"{ss:.4f}", "-copyts", "-i", src,
-                            "-vf", f"select='gte(t\\,{thr:.6f})'", "-fps_mode", "passthrough",
+                            "-vf", f"select='gte(t\\,{thr:.6f})',scale={SW}:{SH}:flags=bicubic,setsar=1",
+                            "-fps_mode", "passthrough",
                             "-frames:v", str(f1 - f0), "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"],
                            stdout=subprocess.PIPE, bufsize=0)
     ass_esc = ass_path.replace("\\", "/").replace(":", "\\:")

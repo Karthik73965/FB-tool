@@ -314,7 +314,11 @@ class Core:
         except OSError:
             pass
         if job.status != "Cancelled":
-            if code == 0 and job.result:
+            if code == 0 and job.result and job.result.get("problems"):
+                job.status = "Failed"      # never hand over a clip with flash / garbage frames
+                job.error = (f"The glitch check found {len(job.result['problems'])} bad frames, so this clip "
+                             "shouldn't be posted. The Log tab has the details.")
+            elif code == 0 and job.result:
                 job.status = "Done"
             else:
                 job.status = "Failed"
