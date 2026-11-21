@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Shell from "@/components/Shell";
 import Review from "@/components/Review";
-import { Bar, Ring, Spinner, StatusChip } from "@/components/ui";
+import { Bar, Device, Ring, Spinner, StatusChip } from "@/components/ui";
 import { ACTIVE, ago, api, bytes, clock, END_REASON, type Job } from "@/lib/api";
 
 function JobView({ id }: { id: string }) {
@@ -47,27 +47,26 @@ function JobView({ id }: { id: string }) {
   return (
     <div className="stack" style={{ gap: 22 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <Link href="/" className="mono small">← STUDIO</Link>
+        <Link href="/" className="btn ghost sm">← Studio</Link>
         <span className="mono small muted">JOB {job.id.toUpperCase()}</span>
       </div>
       <div className="job-layout">
-        <div>
-          <div className="phone">
-            <span className="bracket tl" /><span className="bracket tr" /><span className="bracket bl" /><span className="bracket br" />
+        <div className="device-col">
+          <Device>
             {live ? (
-              <div className="phone-idle">
-                <Ring value={job.pct} size={150} label="Progress" />
-                <div className="eyebrow">{job.stage_text || "Starting"}</div>
+              <div className="device-idle">
+                <Ring value={job.pct} size={130} label="Progress" dark />
+                <div className="label">{job.stage_text || "Starting"}</div>
                 <div style={{ width: 200 }}><Bar value={job.pct} live /></div>
               </div>
             ) : video ? (
               <video key={r?.rendered_at} src={video} controls playsInline preload="metadata" />
             ) : (
-              <div className="phone-idle">
-                <div className="eyebrow muted">{job.status === "failed" ? "Render failed" : "No clip"}</div>
+              <div className="device-idle">
+                <div className="label">{job.status === "failed" ? "Render failed" : "No clip"}</div>
               </div>
             )}
-          </div>
+          </Device>
         </div>
 
         <div className="stack">
@@ -76,14 +75,14 @@ function JobView({ id }: { id: string }) {
               <StatusChip job={job} />
               <span className="mono small muted">{job.source.kind === "link" ? "FROM LINK" : "UPLOAD"} · {ago(job.created)}{job.renders > 1 ? ` · VERSION ${job.renders}` : ""}</span>
             </div>
-            <h1 style={{ fontSize: "clamp(22px, 3.4vw, 30px)", wordBreak: "break-word" }}>{job.name}</h1>
+            <h1 style={{ fontSize: "clamp(26px, 3.6vw, 40px)", letterSpacing: "-0.045em", lineHeight: 1.05, wordBreak: "break-word" }}>{job.name}</h1>
             {job.source.url && <a className="small mono" href={job.source.url} target="_blank" rel="noreferrer" style={{ wordBreak: "break-all" }}>{job.source.url}</a>}
 
             {r && !live && (
               <div className="stats">
                 <div className="stat"><span>Clip length</span><b>{clock(r.end, false)}</b></div>
                 <div className="stat"><span>Source</span><b>{clock(r.duration, false)}</b></div>
-                <div className="stat"><span>Ending</span><b style={{ fontSize: 14, lineHeight: 1.3, marginTop: 8 }}>{END_REASON[r.end_reason]}</b></div>
+                <div className="stat"><span>Ending</span><b className="txt">{END_REASON[r.end_reason]}</b></div>
                 <div className="stat"><span>Glitch check</span><b className={flagged ? "bad" : "ok"}>{flagged ? `${r.problems.length} issue${r.problems.length > 1 ? "s" : ""}` : "Clean"}</b></div>
                 <div className="stat"><span>File</span><b>{bytes(r.size)}</b></div>
               </div>
@@ -117,7 +116,7 @@ function JobView({ id }: { id: string }) {
 
           {job.status === "failed" && job.log_tail.length > 0 && (
             <section className="panel stack">
-              <div className="eyebrow muted">Renderer log</div>
+              <div className="label">Renderer log</div>
               <pre className="log">{job.log_tail.join("\n")}</pre>
             </section>
           )}

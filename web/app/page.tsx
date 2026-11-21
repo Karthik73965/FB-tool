@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import Intake from "@/components/Intake";
 import JobCard from "@/components/JobCard";
-import { Spinner } from "@/components/ui";
+import { Device, Spinner } from "@/components/ui";
 import { ACTIVE, api, session, type Job } from "@/lib/api";
 
 function Studio() {
@@ -34,24 +34,33 @@ function Studio() {
     <>
       <div className="hero">
         <div className="hero-copy">
-          <div className="eyebrow">Vertical clip engine</div>
-          <h1>Talk-show video in.<br /><span className="glow-text">Reel-ready clip</span> out.</h1>
+          <div className="eyebrow">Studio <span className="muted">/</span> Vertical clips</div>
+          <h1>Talk-show video in.<br /><span className="red">Reel out.</span></h1>
           <p className="lede">
             Speaker tracking, word-by-word captions, a waveform card when nobody&apos;s on screen, and the ad at the end
             cut off automatically. Rendered on a cloud GPU.
           </p>
-          <div className="spec">
+          <div className="facts">
             <div><b>1080×1920</b><span>Output</span></div>
             <div><b>~4 min</b><span>Per 6-min video</span></div>
             <div><b>7 days</b><span>Kept online</span></div>
           </div>
         </div>
-        <Intake onChange={load} />
+        <div className="hero-art">
+          <Device tilt>
+            <div className="mock">
+              <div className="face" />
+              <div className="cap">THAT&apos;S WHEN <em>EVERYTHING</em><br />CHANGED</div>
+            </div>
+          </Device>
+        </div>
       </div>
+
+      <Intake onChange={load} />
 
       <div className="section-head">
         <div>
-          <div className="eyebrow muted">Queue</div>
+          <div className="eyebrow plain"><span className="num">02</span> / Queue</div>
           <h2 style={{ marginTop: 4 }}>{admin ? "All clips" : "Your clips"}</h2>
         </div>
         <span className="mono small muted">{running ? `${running} IN PROGRESS` : `${visible.length} TOTAL`}</span>
@@ -61,7 +70,7 @@ function Studio() {
         <div className="center" style={{ minHeight: 160 }}><Spinner /></div>
       ) : visible.length === 0 ? (
         <div className="empty">
-          <div className="eyebrow muted">No clips yet</div>
+          <div className="label">No clips yet</div>
           <p style={{ margin: "8px 0 0" }}>Upload a video or paste a link above to make your first clip.</p>
         </div>
       ) : (

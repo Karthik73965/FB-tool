@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout, session, type User } from "@/lib/api";
-import { Logo, Spinner } from "./ui";
+import { Brand, Spinner } from "./ui";
 
 /** top bar + login guard for every page except /login */
 export default function Shell({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -22,10 +22,7 @@ export default function Shell({ children, adminOnly }: { children: React.ReactNo
     <>
       <header className="topbar">
         <div className="wrap">
-          <Link href="/" className="brand">
-            <span className="brand-mark"><Logo /></span>
-            <span>FB<b>//</b>CLIP</span>
-          </Link>
+          <Link href="/" className="brand"><Brand /></Link>
           {user && (
             <nav className="nav">
               <Link href="/" className={path === "/" ? "on" : ""}>Studio</Link>
@@ -35,9 +32,8 @@ export default function Shell({ children, adminOnly }: { children: React.ReactNo
           <span className="spacer" />
           {user && (
             <div className="who">
-              <span className="pulse" />
-              <span className="hide-sm">{user.name.toUpperCase()}</span>
-              <button className="btn ghost sm" onClick={logout}>Log out</button>
+              <span className="hide-sm">{user.name}</span>
+              <button className="btn sm" onClick={logout}>Log out</button>
             </div>
           )}
         </div>

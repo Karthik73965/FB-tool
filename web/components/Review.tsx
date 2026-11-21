@@ -176,7 +176,7 @@ export default function Review({ job, onApplied }: { job: Job; onApplied: (j: Jo
 
       {dirty && (
         <div className="savebar">
-          <span className="pulse" style={{ background: "var(--amber)", boxShadow: "0 0 10px var(--amber)" }} />
+          <span className="dot" />
           <span className="small" style={{ flex: 1, minWidth: 160 }}>Unsaved changes. Only the changed parts re-render (about 10–30 s plus GPU start-up).</span>
           <button className="btn ghost sm" onClick={() => preview(saved!)} disabled={busy}>Discard</button>
           <button className="btn solid sm" onClick={apply} disabled={busy}>{busy ? "Starting…" : "Re-render clip"}</button>

@@ -43,8 +43,8 @@ function Access() {
     <div className="stack" style={{ gap: 22 }}>
       <div>
         <div className="eyebrow">Access control</div>
-        <h1 style={{ marginTop: 6 }}>Invite codes</h1>
-        <p className="lede">One code per person. They enter it once on each device. Revoking a code logs that person out everywhere.</p>
+        <h1 className="page-title" style={{ marginTop: 10 }}>Invite codes</h1>
+        <p className="lede" style={{ marginTop: 14 }}>One code per person. They enter it once on each device. Revoking a code logs that person out everywhere.</p>
       </div>
 
       <section className="panel stack">

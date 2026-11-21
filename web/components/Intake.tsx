@@ -72,11 +72,11 @@ export default function Intake({ onChange }: { onChange: () => void }) {
   }
 
   return (
-    <section className="panel stack" aria-label="New clip">
+    <section className="panel stack" aria-label="New clip" style={{ marginBottom: 56 }}>
       <div className="panel-head" style={{ marginBottom: 0 }}>
         <div>
-          <div className="eyebrow">New clip</div>
-          <h2 style={{ marginTop: 4 }}>Feed the machine</h2>
+          <div className="eyebrow plain"><span className="num">01</span> / New clip</div>
+          <h2 style={{ marginTop: 6 }}>Add a video</h2>
         </div>
         <div className="tabs" role="tablist">
           <button role="tab" aria-selected={tab === "file"} className={tab === "file" ? "on" : ""} onClick={() => setTab("file")}>Upload</button>
@@ -93,7 +93,7 @@ export default function Intake({ onChange }: { onChange: () => void }) {
             onDragLeave={() => setOver(false)}
             onDrop={(e) => { e.preventDefault(); setOver(false); send(Array.from(e.dataTransfer.files)); }}>
             <div className="drop-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00e6ff" strokeWidth="1.8">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M12 16V4M6 10l6-6 6 6M4 20h16" />
               </svg>
             </div>
@@ -112,7 +112,7 @@ export default function Intake({ onChange }: { onChange: () => void }) {
                       {u.error ? "" : u.done ? "SENT ✓" : `${Math.round(u.frac * 100)}% · ${bytes(u.size)}`}
                     </span>
                   </div>
-                  {u.error ? <div className="alert small">{u.error}</div> : <Bar value={u.frac * 100} live={!u.done} violet />}
+                  {u.error ? <div className="alert small">{u.error}</div> : <Bar value={u.frac * 100} live={!u.done} info />}
                 </div>
               ))}
             </div>

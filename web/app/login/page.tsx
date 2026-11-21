@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, saveSession, session, type User } from "@/lib/api";
-import { Logo } from "@/components/ui";
+import { Brand } from "@/components/ui";
 
 export default function Login() {
   const router = useRouter();
@@ -32,30 +32,25 @@ export default function Login() {
   return (
     <>
       <header className="topbar">
-        <div className="wrap">
-          <span className="brand"><span className="brand-mark"><Logo /></span><span>FB<b>//</b>CLIP</span></span>
-        </div>
+        <div className="wrap"><span className="brand"><Brand /></span></div>
       </header>
       <div className="wrap login">
+        <div className="hero-copy">
+          <div className="eyebrow">Invite only <span className="muted">/</span> Clip maker</div>
+          <h1>Long video in.<br /><span className="red">Vertical clip out.</span></h1>
+          <p className="lede">Speaker tracking, word-by-word captions and the outro cut off, rendered on a cloud GPU.</p>
+        </div>
         <form className="panel stack" onSubmit={submit}>
-          <div className="reticle" aria-hidden>
-            <svg viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="34" stroke="#00e6ff" strokeOpacity=".35" strokeDasharray="3 7" />
-              <path d="M40 2v14M40 64v14M2 40h14M64 40h14" stroke="#00e6ff" strokeWidth="1.5" />
-              <circle cx="40" cy="40" r="20" stroke="#00e6ff" strokeWidth="1.5" />
-              <circle cx="40" cy="40" r="4" fill="#00e6ff" />
-            </svg>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div className="eyebrow">Restricted access</div>
-            <h1 style={{ fontSize: 26, marginTop: 8 }}>Enter your invite code</h1>
-            <p className="muted small" style={{ margin: "8px 0 0" }}>You only need to do this once on each device.</p>
+          <div>
+            <div className="label">Sign in</div>
+            <h2 style={{ marginTop: 6 }}>Enter your invite code</h2>
+            <p className="muted small" style={{ margin: "6px 0 0" }}>You only need to do this once on each device.</p>
           </div>
           <input className="field code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="FB-XXXX-XXXX"
             autoFocus autoComplete="one-time-code" spellCheck={false} aria-label="Invite code" />
           {err && <div className="alert">{err}</div>}
-          <button className="btn solid block" disabled={busy || !code.trim()}>{busy ? "Checking…" : "Unlock"}</button>
-          <p className="muted small" style={{ textAlign: "center", margin: 0 }}>No code? Ask the person who runs this site.</p>
+          <button className="btn solid block" disabled={busy || !code.trim()}>{busy ? "Checking…" : "Continue →"}</button>
+          <p className="muted small" style={{ margin: 0 }}>No code? Ask the person who runs this site.</p>
         </form>
       </div>
     </>

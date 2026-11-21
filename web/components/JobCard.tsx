@@ -17,7 +17,7 @@ export default function JobCard({ job, showOwner }: { job: Job; showOwner?: bool
         {preview && !live ? (
           <video src={`${preview}#t=1`} preload="metadata" muted playsInline />
         ) : live ? (
-          <Ring value={job.pct} size={72} label="Progress" />
+          <Ring value={job.pct} size={64} label="Progress" dark />
         ) : (
           <span className="mono small muted">{job.status === "failed" ? "ERR" : "—"}</span>
         )}
@@ -34,7 +34,7 @@ export default function JobCard({ job, showOwner }: { job: Job; showOwner?: bool
             <div className="meta"><span>{job.stage_text || "Starting"}</span><span>{job.pct}%</span></div>
           </>
         ) : job.status === "failed" ? (
-          <div className="small" style={{ color: "var(--red)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+          <div className="small" style={{ color: "var(--bad)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
             {job.error}
           </div>
         ) : r ? (
