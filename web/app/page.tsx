@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import Intake from "@/components/Intake";
 import JobCard from "@/components/JobCard";
-import { Device, Spinner } from "@/components/ui";
+import { Device, MockClip, Spinner } from "@/components/ui";
 import { ACTIVE, api, session, type Job } from "@/lib/api";
 
 function Studio() {
@@ -48,10 +48,7 @@ function Studio() {
         </div>
         <div className="hero-art">
           <Device tilt>
-            <div className="mock">
-              <div className="face" />
-              <div className="cap">THAT&apos;S WHEN <em>EVERYTHING</em><br />CHANGED</div>
-            </div>
+            <MockClip />
           </Device>
         </div>
       </div>

@@ -1,4 +1,5 @@
 // Talks to the FB Clip Maker API (cloud/fbclip/api.py). The session token lives in localStorage.
+import { DEMO_KEY, DEMO_TOKEN, DEMO_USER, demoApi, demoPut } from "./demo";
 
 export const API = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const TOKEN = "fbclip.token";
@@ -21,6 +22,8 @@ export type Sentence = { s: number; e: number; text: string; fixed: boolean };
 export type Review = { result: Result; edits: Edits; sentences: Sentence[] };
 export type Invite = { id: string; name: string; code: string; created: number; revoked: boolean; jobs: number };
 export type Me = User & { limits: { active: number; bytes: number; seconds: number; keep_days: number; ext: string[] } };
+
+export const isDemo = () => session()?.token === DEMO_TOKEN;
 
 export const ACTIVE = ["queued", "fetching", "running"];
 
@@ -49,10 +52,17 @@ export class ApiError extends Error {
 
 export async function api<T = unknown>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
   const s = session();
+  const method = opts.method || (opts.body !== undefined ? "POST" : "GET");
+  const code = (opts.body as { code?: string } | undefined)?.code;
+  if (path === "/auth/login" && code?.trim().toUpperCase() === DEMO_KEY) return { token: DEMO_TOKEN, user: DEMO_USER } as T;
+  if (s?.token === DEMO_TOKEN) {
+    try { return (await demoApi(path, method, opts.body as Record<string, unknown>)) as T; }
+    catch (e) { throw new ApiError((e as { status?: number }).status || 400, (e as Error).message); }
+  }
   let r: Response;
   try {
     r = await fetch(API + path, {
-      method: opts.method || (opts.body !== undefined ? "POST" : "GET"),
+      method,
       headers: { "Content-Type": "application/json", ...(s ? { Authorization: `Bearer ${s.token}` } : {}) },
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     });
@@ -70,6 +80,7 @@ export async function api<T = unknown>(path: string, opts: { method?: string; bo
 
 /** PUT a file straight to storage (presigned URL), reporting progress 0..1 */
 export function putFile(url: string, file: File, onProgress: (f: number) => void, signal?: AbortSignal) {
+  if (url.startsWith("demo:")) return demoPut(onProgress);
   return new Promise<void>((resolve, reject) => {
     const x = new XMLHttpRequest();
     x.open("PUT", url);

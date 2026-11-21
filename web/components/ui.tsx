@@ -59,6 +59,16 @@ export function Ring({ value, size = 120, label, dark }: { value: number; size?:
   );
 }
 
+/** stand-in clip for demo mode: speaker silhouette + word-highlight caption */
+export function MockClip() {
+  return (
+    <div className="mock">
+      <div className="face" />
+      <div className="cap">THAT&apos;S WHEN <em>EVERYTHING</em><br />CHANGED</div>
+    </div>
+  );
+}
+
 /** the phone frame used on the home page and the job page */
 export function Device({ children, tilt }: { children: React.ReactNode; tilt?: boolean }) {
   return (

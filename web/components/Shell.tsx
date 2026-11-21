@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logout, session, type User } from "@/lib/api";
+import { isDemo, logout, session, type User } from "@/lib/api";
+import { resetDemo } from "@/lib/demo";
 import { Brand, Spinner } from "./ui";
 
 /** top bar + login guard for every page except /login */
@@ -38,6 +39,16 @@ export default function Shell({ children, adminOnly }: { children: React.ReactNo
           )}
         </div>
       </header>
+      {user && isDemo() && (
+        <div className="demobar">
+          <div className="wrap">
+            <span className="dot" />
+            <span><b>Demo mode.</b> Sample clips, nothing is uploaded or rendered.</span>
+            <span className="spacer" />
+            <button className="btn sm" onClick={() => { resetDemo(); location.reload(); }}>Reset demo</button>
+          </div>
+        </div>
+      )}
       <main>
         <div className="wrap">{user ? children : <div className="center"><Spinner /></div>}</div>
       </main>

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Shell from "@/components/Shell";
 import Review from "@/components/Review";
-import { Bar, Device, Ring, Spinner, StatusChip } from "@/components/ui";
+import { Bar, Device, MockClip, Ring, Spinner, StatusChip } from "@/components/ui";
 import { ACTIVE, ago, api, bytes, clock, END_REASON, type Job } from "@/lib/api";
 
 function JobView({ id }: { id: string }) {
@@ -59,6 +59,8 @@ function JobView({ id }: { id: string }) {
                 <div className="label">{job.stage_text || "Starting"}</div>
                 <div style={{ width: 200 }}><Bar value={job.pct} live /></div>
               </div>
+            ) : video === "demo" ? (
+              <MockClip />
             ) : video ? (
               <video key={r?.rendered_at} src={video} controls playsInline preload="metadata" />
             ) : (
@@ -90,7 +92,7 @@ function JobView({ id }: { id: string }) {
 
             {live && (
               <div className="alert info small">
-                {job.status === "queued" ? "Waiting for a cloud GPU. Starting one takes up to a minute." : job.stage_text}
+                {job.status === "queued" ? "Waiting for a cloud GPU. Starting one takes up to a minute." : `${job.stage_text}.`}
                 {r ? " The previous version stays below until this one is done." : " You can leave this page; it keeps going."}
               </div>
             )}
@@ -102,7 +104,7 @@ function JobView({ id }: { id: string }) {
 
             <div className="row">
               {job.download_url && !live && (
-                <a className="btn solid" href={job.download_url}>Download MP4</a>
+                <a className="btn solid" href={job.download_url} onClick={(e) => { if (job.download_url === "#demo") { e.preventDefault(); alert("Demo mode: no real file to download."); } }}>Download MP4</a>
               )}
               {live && <button className="btn danger" onClick={() => act("cancel")}>Cancel</button>}
               {(job.status === "failed" || job.status === "cancelled") && <button className="btn" onClick={() => act("retry")}>Retry</button>}

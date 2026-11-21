@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ACTIVE, ago, clock, type Job } from "@/lib/api";
-import { Bar, Ring, StatusChip } from "./ui";
+import { Bar, MockClip, Ring, StatusChip } from "./ui";
 
 export default function JobCard({ job, showOwner }: { job: Job; showOwner?: boolean }) {
   const live = ACTIVE.includes(job.status);
@@ -14,7 +14,9 @@ export default function JobCard({ job, showOwner }: { job: Job; showOwner?: bool
   return (
     <Link href={`/job?id=${job.id}`} className="panel card">
       <div className="thumb">
-        {preview && !live ? (
+        {preview === "demo" && !live ? (
+          <div style={{ position: "absolute", inset: 0, fontSize: 6 }} className="thumb-mock"><MockClip /></div>
+        ) : preview && !live ? (
           <video src={`${preview}#t=1`} preload="metadata" muted playsInline />
         ) : live ? (
           <Ring value={job.pct} size={64} label="Progress" dark />
