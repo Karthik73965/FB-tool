@@ -15,3 +15,4 @@ build-new/
 cloud/.venv/
 cloud/.dev/
 cloud/.secrets.env
+.wrangler/
