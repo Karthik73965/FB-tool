@@ -2,7 +2,7 @@
   "rules": [
     {
       "allowed": {
-        "origins": ["https://YOUR-SITE.vercel.app", "http://localhost:3000"],
+        "origins": ["https://fb-tool-eight.vercel.app", "http://localhost:3000"],
         "methods": ["GET", "PUT", "HEAD"],
         "headers": ["*"]
       },
