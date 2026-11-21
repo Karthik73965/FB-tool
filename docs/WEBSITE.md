@@ -49,8 +49,11 @@ You (phone/PC) ──► website (Vercel, Next.js) ──API──► backend (M
 
 ## Keeping the desktop app safe
 All cloud code lives in `cloud/` (with its own `cloud/.venv`) and `web/`. The desktop app, `make_clip.bat` and
-`app.py` don't use them. The only change to `reframe.py` is an optional `FFMPEG` environment variable that does
+`app.py` don't use them. The only change to `reframe.py` is an optional `REFRAME_FFMPEG` environment variable that does
 nothing unless it's set.
+
+## Status
+Built and tested locally, not deployed yet. Setup steps: [../cloud/README.md](../cloud/README.md).
 
 ## What's needed to start
 - Accounts: **Modal** (done), **Cloudflare** (Wrangler logged in), **Vercel**

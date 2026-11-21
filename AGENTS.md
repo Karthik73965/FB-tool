@@ -29,6 +29,13 @@ screen, and no outro.
 auto_end=True)`: `detect_outro()` cuts ad reads / bumpers from the transcript, which the CLI leaves to you. If you
 change `reframe.py`, rebuild the app and make sure its selftest still passes.
 
+## Cloud website
+
+`cloud/` (Modal API + GPU worker, own venv `cloud/.venv`) and `web/` (Next.js on Vercel) wrap the same pipeline for
+invited users; see `cloud/README.md`. They don't touch the desktop app or CLI. The only hook in `reframe.py` is
+`REFRAME_FFMPEG` (unset on desktop). Never deploy to Modal or run jobs there without the user's permission. After
+changing `cloud/`, run `cloud\.venv\Scripts\python -m pytest cloud\tests -q`; after changing `web/`, run `npx next build`.
+
 ## Rules
 
 - Don't change the look or the pipeline unless the user asks. If you do change the rendering, bump

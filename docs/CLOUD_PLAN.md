@@ -52,13 +52,13 @@ size.
 
 - All cloud code is in `cloud/` (own venv `cloud/.venv`, own requirements) and `web/`. `make_clip.bat`, `app.py`,
   `setup.bat`, `packaging/` and the desktop `.venv` are untouched.
-- `reframe.py` gets one opt-in hook: if the `FFMPEG` environment variable is set, use that ffmpeg. Unset (desktop,
-  CLI) means the same behavior as today, so `RENDER_VERSION` stays the same.
+- `reframe.py` gets one opt-in hook: if the `REFRAME_FFMPEG` environment variable is set, use that ffmpeg. Unset (desktop,
+  CLI) means the same behavior as today, so `RENDER_VERSION` stays the same. (Done; the desktop selftest still passes.)
 - After the change: run the CLI on a test video (`verify: OK`, same output) and the app selftest.
 
 ## Changes the pipeline needs
 
-1. Linux support in `reframe.py`: the `FFMPEG` env override above, pointing at an NVENC-capable ffmpeg in the
+1. Linux support in `reframe.py`: the `REFRAME_FFMPEG` env override above, pointing at an NVENC-capable ffmpeg in the
    container (the imageio-ffmpeg Linux build has no NVENC); `bin/ffmpeg_nvenc.exe` and the DLL paths are
    Windows-only and already skipped elsewhere.
 2. Model: `large-v3` (best captions; the GPU makes the speed difference small) baked into the container image,
@@ -76,10 +76,15 @@ size.
 4. **Hardening:** limits (e.g. 30 min and 4 GB per video, 3 jobs at a time per person), automatic cleanup,
    showing failed jobs clearly, an admin page for invite codes.
 
-## Phase 0 status
+## Status
 
-- [x] GitHub repo: https://github.com/Karthik73965/FB-tool (main pushed)
-- [x] Cloudflare: Wrangler logged in
-- [x] Modal: account created; CLI installed in `cloud/.venv`
-- [ ] Modal token on this PC: `cloud\.venv\Scripts\modal token new`
-- [ ] Vercel: link the GitHub repo (in phase 2)
+All four phases are built and tested locally; nothing is deployed yet. Setup and deploy steps:
+[../cloud/README.md](../cloud/README.md).
+
+- [x] Phase 0: GitHub repo, Wrangler login, Modal account + token
+- [x] Phase 1: worker (`cloud/fbclip/worker.py`, GPU image in `cloud/modal_app.py`). Not run on Modal yet.
+- [x] Phase 2: API (`cloud/fbclip/api.py`) + Next.js site (`web/`): invite codes, upload, links, live progress, download
+- [x] Phase 3: ending + caption review with quick re-render
+- [x] Phase 4: limits, 7-day cleanup cron, stuck-job detection, failure log on the page, invite-code admin page
+- [ ] Deploy: R2 bucket + CORS, R2 API token, Modal secret, `modal deploy`, Vercel project (needs your go-ahead)
+- [ ] First real job on Modal: check timing, cost, encoder (NVENC vs x264) and the glitch check

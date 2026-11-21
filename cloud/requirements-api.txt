@@ -1,0 +1,5 @@
+fastapi==0.121.3
+pydantic>=2.7,<3
+boto3==1.44.9
+yt-dlp==2026.10.26
+numpy==2.2.6
