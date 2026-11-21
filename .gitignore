@@ -10,3 +10,5 @@ packaging/icon.icns
 packaging/icon.png
 *.mp4
 *.mov
+dist-new/
+build-new/

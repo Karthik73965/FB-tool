@@ -5,8 +5,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 ICON = os.path.join(SPECPATH, "icon.ico" if sys.platform == "win32" else "icon.icns")
 
-datas = [(os.path.join(ROOT, "fonts"), "fonts")]
-for pkg in ("mediapipe", "faster_whisper", "imageio_ffmpeg", "tkinterdnd2"):
+datas = [(os.path.join(ROOT, "fonts"), "fonts"), (os.path.join(ROOT, "ui"), "ui")]
+for pkg in ("mediapipe", "faster_whisper", "imageio_ffmpeg", "webview"):
     datas += collect_data_files(pkg)
 binaries = collect_dynamic_libs("ctranslate2") + collect_dynamic_libs("onnxruntime")
 nvenc = os.path.join(ROOT, "bin", "ffmpeg_nvenc.exe")     # ffmpeg 4.2 for NVENC on older drivers (setup_helper.py)
@@ -18,7 +18,7 @@ a = Analysis(
     pathex=[ROOT],
     binaries=binaries,
     datas=datas,
-    hiddenimports=["reframe", "verify", "gpu_pack", "tkinterdnd2"],
+    hiddenimports=["reframe", "verify", "gpu_pack", "webview", "clr"],
     excludes=["nvidia", "torch", "tensorflow", "jax", "jaxlib", "IPython", "pytest", "notebook"],
     noarchive=False,
 )

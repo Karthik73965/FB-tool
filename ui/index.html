@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FB Clip Maker</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="grid-bg" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"><i></i></span>
+    <h1>FB Clip Maker</h1>
+  </div>
+  <div class="engine" id="engine" title="Where the heavy work runs"></div>
+  <button class="btn primary" id="add">Add videos</button>
+</header>
+
+<main class="stage">
+  <aside class="queue glass" aria-label="Videos">
+    <div class="queue-head">
+      <h2>Videos</h2>
+      <span class="count" id="count"></span>
+    </div>
+    <ol class="jobs" id="jobs"></ol>
+    <button class="drop" id="drop">
+      <span class="drop-icon" aria-hidden="true"></span>
+      <span><b>Drop videos here</b><br>or click to choose</span>
+    </button>
+  </aside>
+
+  <section class="center" aria-live="polite">
+    <div class="halo" id="halo" aria-hidden="true"></div>
+    <div class="phone" id="phone">
+      <div class="screen" id="screen"></div>
+    </div>
+    <div class="under" id="under"></div>
+  </section>
+
+  <aside class="inspector glass" id="inspector" aria-label="Review"></aside>
+</main>
+
+<div class="dropveil" id="dropveil" aria-hidden="true"><div>Drop to add</div></div>
+<script src="app.js"></script>
+</body>
+</html>
