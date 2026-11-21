@@ -1,0 +1,14 @@
+# What the packaged app is built from (CI). Same pins as ../requirements.txt, minus the nvidia-* wheels
+# (the Windows app downloads those itself on NVIDIA laptops, see gpu_pack.py). On macOS, OpenCV 4.10 is used
+# because the 5.x wheels need macOS 15+.
+opencv-python==5.1.0.95; sys_platform == "win32"
+opencv-contrib-python==5.1.0.95; sys_platform == "win32"
+opencv-python==4.10.0.84; sys_platform == "darwin"
+opencv-contrib-python==4.10.0.84; sys_platform == "darwin"
+numpy==2.2.6
+faster-whisper==1.2.1
+ctranslate2==4.9.0
+imageio-ffmpeg==0.8.1
+mediapipe==0.10.14
+protobuf==4.25.9
+-r requirements-build.txt

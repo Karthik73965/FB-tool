@@ -1,0 +1,9 @@
+opencv-python==5.1.0.95
+numpy==2.2.6
+faster-whisper==1.2.1
+ctranslate2==4.9.0
+imageio-ffmpeg==0.8.1
+mediapipe==0.10.14
+protobuf==4.25.9
+nvidia-cublas-cu12==12.9.2.10
+nvidia-cudnn-cu12==9.28.1.4

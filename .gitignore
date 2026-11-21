@@ -1,0 +1,12 @@
+.venv/
+.venv-build/
+__pycache__/
+work/
+bin/
+build/
+dist/
+packaging/icon.ico
+packaging/icon.icns
+packaging/icon.png
+*.mp4
+*.mov
