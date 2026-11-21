@@ -12,3 +12,4 @@ packaging/icon.png
 *.mov
 dist-new/
 build-new/
+cloud/.venv/
