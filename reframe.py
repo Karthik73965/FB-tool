@@ -20,7 +20,7 @@ FPS_NUM, FPS_DEN = 30000, 1001
 SW, SH, OW, OH = 1920, 1080, 1080, 1920
 AW, AH = 640, 360            # analysis resolution
 STEP = 3                     # face analysis every 3rd frame
-RENDER_VERSION = "6"         # bump to invalidate cached chunks after changing the look
+RENDER_VERSION = "7"         # bump to invalidate cached chunks after changing the look
 
 
 def ffmpeg_exe():
@@ -140,6 +140,13 @@ def _faces(job):
     return {"f": i, "faces": faces}
 
 
+def fit(w, h):
+    """ffmpeg filter: any source size / shape to w x h (16:9), letterboxed instead of stretched. analyze() and
+    render_chunk() must use the same geometry so face positions line up."""
+    return (f"scale={w}:{h}:force_original_aspect_ratio=decrease:flags=bicubic,"
+            f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1")
+
+
 def frame_count(src):
     FF = ffmpeg_exe()
     r = subprocess.run([FF, "-hide_banner", "-i", src], capture_output=True, text=True).stderr
@@ -152,7 +159,7 @@ def analyze(src, out_json, n, workers):
     import cv2
     from collections import deque
     FF = ffmpeg_exe()
-    dec = subprocess.Popen([FF, "-v", "error"] + hwdec() + ["-i", src, "-vf", f"scale={AW}:{AH}",
+    dec = subprocess.Popen([FF, "-v", "error"] + hwdec() + ["-i", src, "-vf", f"fps={FPS_NUM}/{FPS_DEN}:start_time=0,{fit(AW, AH)}",
                             "-f", "rawvideo", "-pix_fmt", "bgr24", "-"], stdout=subprocess.PIPE, bufsize=0)
     cut, mot, samples, pending = [], [], [], deque()
     prev_h = prev_s = None
@@ -488,11 +495,11 @@ def render_chunk(job):
 
     # Frame-exact: seek ~2 s early (seek accuracy no longer matters), keep source timestamps (-copyts)
     # and select frames by timestamp, so chunk frame k is always source frame f0+k.
-    # Always scale to SW x SH: the frame reader below assumes that size (720p sources were read as garbage).
+    # Same grid as analyze(): 29.97 fps, SW x SH (the frame reader below assumes that size).
     ss = max(0.0, (f0 - 60) / FPS)
     thr = (f0 - 0.5) / FPS
     dec = subprocess.Popen([FF, "-v", "error"] + hwdec() + ["-ss", f"{ss:.4f}", "-copyts", "-i", src,
-                            "-vf", f"select='gte(t\\,{thr:.6f})',scale={SW}:{SH}:flags=bicubic,setsar=1",
+                            "-vf", f"fps={FPS_NUM}/{FPS_DEN},select='gte(t\\,{thr:.6f})',{fit(SW, SH)}",
                             "-fps_mode", "passthrough",
                             "-frames:v", str(f1 - f0), "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"],
                            stdout=subprocess.PIPE, bufsize=0)
