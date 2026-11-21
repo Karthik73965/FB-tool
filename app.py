@@ -510,8 +510,19 @@ def dark_titlebar():
     if sys.platform != "win32":
         return
     try:
-        import ctypes
-        hwnd = ctypes.windll.user32.FindWindowW(None, APP_NAME)
+        import ctypes, ctypes.wintypes as wt
+        u, mine = ctypes.windll.user32, []
+
+        @ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
+        def cb(h, _):      # this process's own window (another copy of the app may be open with the same title)
+            pid, buf = wt.DWORD(), ctypes.create_unicode_buffer(64)
+            u.GetWindowThreadProcessId(h, ctypes.byref(pid))
+            u.GetWindowTextW(h, buf, 64)
+            if pid.value == os.getpid() and buf.value == APP_NAME:
+                mine.append(h)
+            return True
+        u.EnumWindows(cb, 0)
+        hwnd = mine[0] if mine else u.FindWindowW(None, APP_NAME)
         for attr, val in ((20, 1), (35, 0x000E0706), (36, 0x00F8EEEC)):   # dark mode, caption, caption text
             v = ctypes.c_int(val)
             ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, attr, ctypes.byref(v), 4)
