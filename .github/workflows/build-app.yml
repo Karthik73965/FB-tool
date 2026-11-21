@@ -27,7 +27,7 @@ jobs:
         with: {name: FBClipMaker-Windows, path: dist/FBClipMaker-Windows.zip, compression-level: 0}
 
   macos:
-    runs-on: macos-14
+    runs-on: macos-15     # Apple Silicon; app still targets macOS 12+ (LSMinimumSystemVersion)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
