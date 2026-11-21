@@ -20,7 +20,7 @@ FPS_NUM, FPS_DEN = 30000, 1001
 SW, SH, OW, OH = 1920, 1080, 1080, 1920
 AW, AH = 640, 360            # analysis resolution
 STEP = 3                     # face analysis every 3rd frame
-RENDER_VERSION = "5"         # bump to invalidate cached chunks after changing the look
+RENDER_VERSION = "6"         # bump to invalidate cached chunks after changing the look
 
 
 def ffmpeg_exe():
@@ -201,6 +201,10 @@ def make_plan(a, edits):
         lo, hi = max(1, i - 6), min(N, i + 7)
         neigh = np.median(np.r_[mo[lo:i], mo[i + 1:hi]]) if hi - lo > 1 else 0
         if (cs[i] > 0.2 or (mo[i] > 10 and mo[i] > 4 * neigh + 2)) and i - cuts[-1] > 4:
+            # fast motion right before a camera cut triggers a frame early: move to the real cut if one follows
+            # (a cut found by cutscore stays put, so dissolves still switch layout on their first frame)
+            if cs[i] <= 0.2:
+                i = next((k for k in range(i + 1, min(N, i + 4)) if cs[k] > 0.2), i)
             cuts.append(i)
     cuts.append(N)
     shots = [(cuts[k], cuts[k + 1]) for k in range(len(cuts) - 1)]
@@ -438,6 +442,14 @@ def write_ass(events, path, offset=0.0):
 # ----------------------------------------------------------------------------------------------
 # 5. render (parallel chunks, NVENC)
 # ----------------------------------------------------------------------------------------------
+def video_lead(src):
+    """frames before the first picture when the video stream starts after 0 (e.g. start 0.033). The analysis decode
+    (constant frame rate) repeats frame 0 to fill them, so its frame i is at i/FPS; render_chunk does the same."""
+    r = subprocess.run([ffmpeg_exe(), "-hide_banner", "-i", src], capture_output=True, text=True, errors="replace")
+    m = re.search(r"Stream #.*Video:.*\bstart (-?[\d.]+)", r.stderr)
+    return max(0, round(float(m.group(1)) * FPS_NUM / FPS_DEN)) if m else 0
+
+
 def render_chunk(job):
     import cv2
     src, f0, f1, plan, ass_path, out, audio_path, wave_t0, encoder = job
@@ -495,8 +507,9 @@ def render_chunk(job):
     fsz = SW * SH * 3 // 2
     buf = bytearray(fsz); mv = memoryview(buf)
     yuv = np.frombuffer(buf, np.uint8).reshape(SH * 3 // 2, SW)
+    hold = max(0, video_lead(src) - f0)      # chunk 0 of a late-starting stream: repeat its first frame
     for idx, fi in enumerate(range(f0, f1)):
-        got = 0
+        got = fsz if 0 < idx <= hold else 0
         while got < fsz:                       # unbuffered readinto: no extra copies (pipe was the bottleneck)
             r = dec.stdout.readinto(mv[got:])
             if not r:

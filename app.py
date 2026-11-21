@@ -30,7 +30,24 @@ APP_NAME = "FB Clip Maker"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL = "large-v3-turbo"
 MODEL_BYTES = 1.62e9          # model.bin of large-v3-turbo, for the first-run download progress
-WORKERS = max(2, min(6, (os.cpu_count() or 4) // 2))
+def ram_gb():
+    try:
+        if sys.platform == "win32":
+            import ctypes
+
+            class MS(ctypes.Structure):
+                _fields_ = [("len", ctypes.c_ulong), ("load", ctypes.c_ulong), ("total", ctypes.c_ulonglong),
+                            ("rest", ctypes.c_ulonglong * 6)]
+            m = MS(); m.len = ctypes.sizeof(MS)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+            return m.total / 2 ** 30
+        return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 2 ** 30
+    except Exception:
+        return 8.0
+
+
+# parallel render chunks: limited by cores and by RAM (6 workers ran out of memory on a 16 GB laptop)
+WORKERS = max(2, min(6, (os.cpu_count() or 4) // 2, int(ram_gb() // 4)))
 VIDEO_TYPES = (".mp4", ".mov", ".mkv", ".m4v", ".avi", ".webm")
 
 
