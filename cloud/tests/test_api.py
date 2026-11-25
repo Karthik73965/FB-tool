@@ -219,3 +219,12 @@ def test_cleanup(env, tmp_path):
     assert jobs.cleanup(st, str(work)) == [old]
     assert sorted(os.listdir(work)) == [new]
     assert st.keys(f"uploads/{old}/") == [] and st.keys(f"uploads/{new}/")
+
+
+def test_broll_paths_never_come_from_the_browser():
+    from fbclip import review
+    old = {"broll": [{"at": 10.0, "file": "/work/a.mp4"}, {"at": 40.5, "file": "/work/b.mp4"}]}
+    assert review.keep_broll(review.clean_edits({}), {}, old)["broll"] == old["broll"]          # kept as is
+    sent = {"broll": [{"at": 40.5, "file": "/etc/passwd"}]}                                      # drop one
+    assert review.keep_broll(review.clean_edits(sent), sent, old)["broll"] == [old["broll"][1]]
+    assert "broll" not in review.keep_broll(review.clean_edits(sent), sent, {})                  # nothing to keep

@@ -18,16 +18,27 @@ screen, and no outro.
 4. Check the captions: skim the transcript in `work/<name>/transcript.json` for obviously misheard names
    (e.g. "bruh manager" when the speaker said "Rob manager") and add `{"at": <seconds>, "to": "<word>"}` entries
    under `"words"`. Ask the user if unsure.
-5. Look at a few frames to confirm: `ffmpeg -ss <t> -i <name>_9x16.mp4 -frames:v 1 check.png`, using the ffmpeg
+5. Check the B-roll (needs `OPENROUTER_API_KEY`; without it there is none). The first run picks about one full-screen
+   cutaway per 35 s, each 5–10 s, from YouTube (Breakfast Club channel first, then anywhere; `broll.py`: Claude
+   Haiku via OpenRouter picks the moments, yt-dlp + captions find footage, an OpenCV face match keeps each shot on
+   the named person and drops anything showing the hosts, the model checks the frames). A subject can come back,
+   but never with the same footage. They're listed in `report.txt` and saved under `"broll"` in `<name>.edits.json`. **Look at a frame
+   from the middle of each cutaway** (it must show the named person/event, not a host); delete bad entries and
+   re-run. Delete the `"broll"` key to pick again; `"broll": []` turns it off. Spend is capped at $0.10 per video
+   (`work/<name>/broll/cost.json`).
+6. Look at a few frames to confirm: `ffmpeg -ss <t> -i <name>_9x16.mp4 -frames:v 1 check.png`, using the ffmpeg
    from `.venv\Scripts\python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())"`.
-6. Report: output path, final length, where it was cut and why, and the `verify.py` result.
+7. Report: output path, final length, where it was cut and why, the B-roll used (and its cost), and the
+   `verify.py` result.
 
 ## Desktop app
 
 `app.py` wraps the same pipeline for people without Python (`packaging\build_app.bat` builds the Windows zip,
 `.github/workflows/build-app.yml` builds Windows + macOS). It calls `reframe.run(..., model="large-v3-turbo",
 auto_end=True)`: `detect_outro()` cuts ad reads / bumpers from the transcript, which the CLI leaves to you. If you
-change `reframe.py`, rebuild the app and make sure its selftest still passes.
+change `reframe.py`, rebuild the app and make sure its selftest still passes. B-roll in the app needs
+`OPENROUTER_API_KEY` in the environment or the key in `<app data>\openrouter_key.txt`; never bundle a key in the
+zip. The cloud worker reads it from the optional `OPENROUTER_API_KEY` in `cloud/.secrets.env` (push_secret.py).
 
 ## Cloud website
 

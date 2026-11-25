@@ -27,7 +27,7 @@ def _bake_model():
 
 def _code(img, render=False):
     img = (img.add_local_dir(ROOT / "cloud" / "fbclip", "/root/fbclip", ignore=["**/__pycache__/**"])
-              .add_local_file(ROOT / "reframe.py", "/app/reframe.py"))
+              .add_local_file(ROOT / "reframe.py", "/app/reframe.py").add_local_file(ROOT / "broll.py", "/app/broll.py"))
     if render:
         img = img.add_local_file(ROOT / "verify.py", "/app/verify.py").add_local_dir(ROOT / "fonts", "/app/fonts")
     return img
@@ -40,10 +40,16 @@ render_image = _code(
         "mkdir -p /opt/ffmpeg && (" + " || ".join(f"curl -fsSL {u} -o /tmp/ff.tar.xz" for u in FFMPEG_URLS) + ")"
         " && tar -xJf /tmp/ff.tar.xz -C /opt/ffmpeg --strip-components=1 && rm /tmp/ff.tar.xz",
         "/opt/ffmpeg/bin/ffmpeg -hide_banner -encoders | grep -q h264_nvenc",
-        "/opt/ffmpeg/bin/ffmpeg -hide_banner -filters | grep -q ' ass '")
+        "/opt/ffmpeg/bin/ffmpeg -hide_banner -filters | grep -q ' ass '",
+        # B-roll face check (broll.FACE_MODELS; same files and checksums)
+        "mkdir -p /opt/models && cd /opt/models"
+        " && curl -fsSLO https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
+        " && curl -fsSLO https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx"
+        " && echo '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4  face_detection_yunet_2023mar.onnx' | sha256sum -c"
+        " && echo '0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79  face_recognition_sface_2021dec.onnx' | sha256sum -c")
     .pip_install_from_requirements(str(ROOT / "requirements.txt"))
     .pip_install("boto3==1.44.9")
-    .env({"REFRAME_FFMPEG": "/opt/ffmpeg/bin/ffmpeg", "FBCLIP_REFRAME_DIR": "/app",
+    .env({"REFRAME_FFMPEG": "/opt/ffmpeg/bin/ffmpeg", "FBCLIP_REFRAME_DIR": "/app", "REFRAME_MODELS": "/opt/models",
           "LD_LIBRARY_PATH": f"{SITE}/nvidia/cublas/lib:{SITE}/nvidia/cudnn/lib",
           "NVIDIA_DRIVER_CAPABILITIES": "compute,utility,video"})
     .run_function(_bake_model),

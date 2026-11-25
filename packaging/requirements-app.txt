@@ -11,4 +11,5 @@ ctranslate2==4.9.0
 imageio-ffmpeg==0.8.1
 mediapipe==0.10.14
 protobuf==4.25.9
+yt-dlp==2026.10.26
 -r requirements-build.txt

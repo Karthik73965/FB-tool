@@ -71,7 +71,8 @@ def progress(stage, parts):
     if stage == "work":
         tr, an, rd = parts.get("transcribe", 0), parts.get("analyze", 0), parts.get("render", 0)
         frac = 0.6 * (tr + an) / 2 + 0.37 * rd
-        txt = "Rendering" if "render" in parts or (tr >= 1 and an >= 1) else "Transcribing and tracking faces"
+        txt = "Rendering" if "render" in parts else "Finding B-roll" if "broll" in parts else \
+            "Rendering" if tr >= 1 and an >= 1 else "Transcribing and tracking faces"
         return int(5 + 88 * frac), txt
     if stage == "verify":
         return 95, "Checking for glitches"

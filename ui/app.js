@@ -100,7 +100,7 @@ function renderCenter(job) {
 function updateWorking(job) {
   const p = job.parts || {};
   $("#bigpct").innerHTML = `${job.pct}<small>%</small>`;
-  const words = { model: "Getting model", gpupack: "Getting GPU pack", verify: "Checking", work: p.render !== undefined ? "Rendering" : "Listening" }[job.stage] || "Starting";
+  const words = { model: "Getting model", gpupack: "Getting GPU pack", verify: "Checking", work: p.render !== undefined ? "Rendering" : p.broll !== undefined ? "Finding B-roll" : "Listening" }[job.stage] || "Starting";
   $("#stagecap").innerHTML = cap(words, words.split(" ").length - 1, "small");
   $("#stagenote").textContent = job.stage === "model" ? "First video only: downloading the speech model (about 1.6 GB)."
     : job.stage === "gpupack" ? "First video only: downloading the NVIDIA speed-up pack (about 1 GB)." : "";

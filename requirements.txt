@@ -7,3 +7,4 @@ mediapipe==0.10.14
 protobuf==4.25.9
 nvidia-cublas-cu12==12.9.2.10
 nvidia-cudnn-cu12==9.28.1.4
+yt-dlp==2026.10.26

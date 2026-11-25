@@ -270,7 +270,7 @@ def create_app(store, spawner, admin_key, session_secret, origins=(), origin_reg
         if j["status"] in jobs.ACTIVE or j["status"] == "uploading":
             raise HTTPException(409, "Wait for the current render to finish.")
         check_active(u)
-        j.update(edits=review.clean_edits(body.edits), status="queued", stage="", pct=0, error=None, log_tail=[],
+        j.update(edits=review.keep_broll(review.clean_edits(body.edits), body.edits, j.get("edits") or {}), status="queued", stage="", pct=0, error=None, log_tail=[],
                  stage_text="Waiting for a GPU")
         return view(launch(j, "render"))
 

@@ -112,6 +112,10 @@ def engine(argv):
     ap.add_argument("--workers", type=int, default=WORKERS)
     args = ap.parse_args(argv)
     os.environ["REFRAME_PROGRESS"] = "1"
+    keyfile = os.path.join(data_dir(), "openrouter_key.txt")      # B-roll picker key (or OPENROUTER_API_KEY)
+    if not os.environ.get("OPENROUTER_API_KEY") and os.path.exists(keyfile):
+        os.environ["OPENROUTER_API_KEY"] = open(keyfile).read().strip()
+    os.environ.setdefault("REFRAME_MODELS", os.path.join(data_dir(), "models"))   # B-roll face check (downloaded once)
     try:
         import gpu_pack
         if gpu_pack.wanted():
@@ -163,6 +167,12 @@ def selftest(report):
         lines.append(f"ffmpeg {ff}: ok (libass)")
         lines.append(f"encoder: {reframe.pick_encoder()[2]}")
         lines.append(f"ctranslate2 {ctranslate2.__version__}, CUDA devices: {ctranslate2.get_cuda_device_count()}")
+        import broll, yt_dlp
+        assert hasattr(cv2, "FaceDetectorYN") and hasattr(cv2, "FaceRecognizerSF"), "OpenCV has no face recognizer"
+        with yt_dlp.YoutubeDL({"quiet": True}) as y:
+            assert y.get_info_extractor("YoutubeTab"), "yt-dlp extractors missing"
+        lines.append(f"b-roll: yt-dlp {yt_dlp.version.__version__}, OpenRouter key "
+                     f"{'set' if broll.api_key() else 'not set (clips render without B-roll)'}")
     except Exception:
         ok = False
         lines.append(traceback.format_exc())
@@ -319,7 +329,8 @@ class Core:
         elif st == "work":
             tr, an, rd = p.get("transcribe", 0), p.get("analyze", 0), p.get("render", 0)
             frac = 0.6 * (tr + an) / 2 + 0.37 * rd
-            txt = "Rendering" if "render" in p or (tr >= 1 and an >= 1) else "Transcribing"
+            txt = "Rendering" if "render" in p else "Finding B-roll" if "broll" in p else \
+                "Rendering" if tr >= 1 and an >= 1 else "Transcribing"
         else:
             frac, txt = 0, "Starting"
         job.pct, job.stage_text = int(frac * 100), txt
@@ -442,9 +453,15 @@ class Api:
     def apply(self, key, edits):
         job = self._core.find(key)
         if job:
-            job.save_edits({"end": edits.get("end"), "keep_outro": bool(edits.get("keep_outro")),
-                            "words": [{"at": f["at"], "to": f["to"]} for f in edits.get("words", [])],
-                            "wave": edits.get("wave", []), "face": edits.get("face", [])})
+            new = {"end": edits.get("end"), "keep_outro": bool(edits.get("keep_outro")),
+                   "words": [{"at": f["at"], "to": f["to"]} for f in edits.get("words", [])],
+                   "wave": edits.get("wave", []), "face": edits.get("face", [])}
+            saved = job.edits()
+            if "broll" in saved:          # keep the B-roll picked last time; the UI may send the "at"s to keep
+                keep = edits.get("broll")
+                new["broll"] = saved["broll"] if keep is None else \
+                    [b for b in saved["broll"] if any(abs(b["at"] - float(k["at"])) < 0.01 for k in keep)]
+            job.save_edits(new)
             self._core.add([job.src])
 
     def retry(self, key):

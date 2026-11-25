@@ -1,6 +1,6 @@
 # PyInstaller spec for FB Clip Maker (Windows .exe folder / macOS .app). Build: packaging\build_app.bat or build_app.sh
 import os, sys
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules
 
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 ICON = os.path.join(SPECPATH, "icon.ico" if sys.platform == "win32" else "icon.icns")
@@ -18,7 +18,7 @@ a = Analysis(
     pathex=[ROOT],
     binaries=binaries,
     datas=datas,
-    hiddenimports=["reframe", "verify", "gpu_pack", "webview", "clr"],
+    hiddenimports=["reframe", "verify", "broll", "gpu_pack", "webview", "clr"] + collect_submodules("yt_dlp"),
     excludes=["nvidia", "torch", "tensorflow", "jax", "jaxlib", "IPython", "pytest", "notebook"],
     noarchive=False,
 )

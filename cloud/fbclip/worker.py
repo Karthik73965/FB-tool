@@ -121,6 +121,7 @@ def _render(store, job, work_root, model, workers, commit, tail):
 
     if jobs.update(store, job_id, stage="verify") is None:
         raise Cancelled()
+    edits = json.load(open(edits_path))            # reframe adds the B-roll it picked (kept for re-renders)
     problems = verify.check(out, os.path.join(cache, "analysis.json"), edits)[3]
     res = json.load(open(os.path.join(cache, "result.json")))
     if jobs.update(store, job_id, stage="upload") is None:
@@ -133,9 +134,11 @@ def _render(store, job, work_root, model, workers, commit, tail):
     bad = {"status": "failed", "error": f"The glitch check found {len(problems)} bad frames, so this clip shouldn't "
            "be posted. Try changing the ending and re-rendering, or tell the admin."} if problems else {"status": "done"}
     jobs.update(store, job_id, stage="done", log_tail=list(tail)[-25:], renders=job.get("renders", 0) + 1, **bad,
+                edits=edits,
                 result={"duration": res["duration"], "end": res["end"], "end_reason": res["end_reason"],
                         "ad_start": res["ad_start"], "encoder": res["encoder"], "device": res["device"],
                         "problems": problems, "size": os.path.getsize(out), "rendered_at": time.time(),
+                        "broll": res.get("broll", 0), "broll_cost": res.get("broll_cost", 0),
                         "edits": edits})
 
 

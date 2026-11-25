@@ -55,6 +55,20 @@ def fix_caption(tr, edits, si, text):
     return edits, lines(sn, edits)[0]
 
 
+def keep_broll(clean, sent, old):
+    """B-roll file paths only ever come from the worker. The browser can drop entries (sends the "at" of the ones
+    to keep) or omit "broll" to keep them all; it never sends paths."""
+    if "broll" not in old:
+        return clean
+    keep = sent.get("broll")
+    if keep is None:
+        clean["broll"] = old["broll"]
+    else:
+        ats = [float(k["at"]) for k in keep if isinstance(k, dict) and isinstance(k.get("at"), (int, float))]
+        clean["broll"] = [b for b in old["broll"] if any(abs(b["at"] - a) < 0.01 for a in ats)]
+    return clean
+
+
 def clean_edits(e):
     """only the fields reframe reads, with sane types"""
     end = e.get("end")

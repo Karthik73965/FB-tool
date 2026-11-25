@@ -8,7 +8,9 @@ the 4:5 feed-safe band.
   - word-by-word captions (Whisper large-v3 on the GPU), profanity masked on screen
   - waveform card layout when nobody is on screen / the frame is a still image / a small graphic inset
 Optional <video>.edits.json next to the source (created on first run) for corrections:
-  {"end": 280.25, "words": [{"at": 75.92, "to": "Rob"}], "wave": [[41, 60]], "face": [[10, 12]]}
+  {"end": 280.25, "words": [{"at": 75.92, "to": "Rob"}], "wave": [[41, 60]], "face": [[10, 12]],
+   "broll": [{"at": 42.5, "dur": 2.5, "file": "C:/clips/car.mp4"}]}
+  "broll" is filled automatically (broll.py, OpenRouter) the first time; [] = no B-roll.
 Everything is cached in work/<name>/: re-running after an edit only re-renders the chunks that changed.
 """
 import argparse, hashlib, json, os, re, subprocess, sys, time
@@ -20,7 +22,7 @@ FPS_NUM, FPS_DEN = 30000, 1001
 SW, SH, OW, OH = 1920, 1080, 1080, 1920
 AW, AH = 640, 360            # analysis resolution
 STEP = 3                     # face analysis every 3rd frame
-RENDER_VERSION = "7"         # bump to invalidate cached chunks after changing the look
+RENDER_VERSION = "8"         # bump to invalidate cached chunks after changing the look
 
 
 def ffmpeg_exe():
@@ -301,6 +303,18 @@ def make_plan(a, edits):
         if m == "face" and (e - s) / fps < 1.5 and runs[k - 1][2] == "wave" and runs[k + 1][2] == "wave":
             for f in range(s, e):
                 plan[f]["m"] = "wave"
+    # B-roll cutaways (full screen) on top; their edges are hard cuts like camera cuts
+    # (an edge within 6 frames of a camera cut moves onto it: no sliver of a shot flashes in between;
+    # a clip stretched that way holds its last frame for those few frames)
+    for b in edits.get("broll") or []:
+        f0 = int(round(b["at"] * fps))
+        f1 = f0 + int(b.get("frames") or round(b.get("dur", 2.5) * fps))
+        f0 = next((c for c in cuts if f0 - 6 <= c < f0), f0)
+        f1 = next((c for c in cuts if f1 < c <= f1 + 6), f1)
+        for k in range(max(0, -f0), min(f1, N) - f0):
+            plan[f0 + k] = {**plan[f0 + k], "m": "broll", "b": b["file"], "k": k}
+        cuts = [c for c in cuts if not f0 < c < f1] + [c for c in (f0, f1) if 0 < c < N]
+    cuts = sorted(set(cuts))
     return plan, cuts
 
 
@@ -503,11 +517,12 @@ def render_chunk(job):
                             "-fps_mode", "passthrough",
                             "-frames:v", str(f1 - f0), "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"],
                            stdout=subprocess.PIPE, bufsize=0)
-    ass_esc = ass_path.replace("\\", "/").replace(":", "\\:")
+    ass_esc = os.path.basename(ass_path)     # relative to cwd: libass can't open non-ASCII paths on Windows
     enc_exe, enc_args = encoder
     enc = subprocess.Popen([enc_exe, "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{OW}x{OH}",
                             "-r", f"{FPS_NUM}/{FPS_DEN}", "-i", "-", "-vf", f"ass='{ass_esc}':fontsdir='{FONTS_ESC}'"] + enc_args +
-                           ["-g", "60", "-pix_fmt", "yuv420p", out], stdin=subprocess.PIPE)
+                           ["-g", "60", "-pix_fmt", "yuv420p", os.path.abspath(out)], stdin=subprocess.PIPE,
+                           cwd=os.path.dirname(os.path.abspath(ass_path)))
     bars = np.zeros(NB)
     t_mode = wave_t0
     prev_m = plan[0]["m"]
@@ -515,6 +530,9 @@ def render_chunk(job):
     buf = bytearray(fsz); mv = memoryview(buf)
     yuv = np.frombuffer(buf, np.uint8).reshape(SH * 3 // 2, SW)
     hold = max(0, video_lead(src) - f0)      # chunk 0 of a late-starting stream: repeat its first frame
+    bdec, bkey = None, None                  # B-roll: one sequential decode per cutaway, normalised to OW x OH
+    bsz = OW * OH * 3 // 2
+    bbuf = bytearray(bsz)
     for idx, fi in enumerate(range(f0, f1)):
         got = fsz if 0 < idx <= hold else 0
         while got < fsz:                       # unbuffered readinto: no extra copies (pipe was the bottleneck)
@@ -528,6 +546,24 @@ def render_chunk(job):
         p = plan[idx]
         t_mode = t_mode + 1 if p["m"] == prev_m else 0
         prev_m = p["m"]
+        if p["m"] == "broll":
+            if bkey != (p["b"], p["k"] - 1):
+                if bdec:
+                    bdec.kill()
+                bdec = subprocess.Popen([FF, "-v", "error", "-i", p["b"], "-an", "-vf",
+                                         f"fps={FPS_NUM}/{FPS_DEN},scale={OW}:{OH}:force_original_aspect_ratio="
+                                         f"increase,crop={OW}:{OH},select='gte(n\\,{p['k']})'",
+                                         "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"],
+                                        stdout=subprocess.PIPE)
+            got = bdec.stdout.readinto(bbuf) or 0
+            while 0 < got < bsz:
+                r = bdec.stdout.readinto(memoryview(bbuf)[got:])
+                if not r:
+                    break
+                got += r
+            bkey = (p["b"], p["k"])          # a clip shorter than planned holds its last frame
+            enc.stdin.write(bytes(bbuf))
+            continue
         if p["m"] == "face":
             z = p["z"]; ch = SH / z; cw = ch * OW / OH
             cx = np.clip(p["x"] * SW, cw / 2, SW - cw / 2); cy = np.clip(p["y"] * SH, ch / 2, SH - ch / 2)
@@ -565,6 +601,8 @@ def render_chunk(job):
             frame = canvas
         enc.stdin.write(cv2.cvtColor(frame, cv2.COLOR_BGR2YUV_I420).tobytes())
     enc.stdin.close(); enc.wait(); dec.kill()
+    if bdec:
+        bdec.kill()
     return out
 
 
@@ -654,6 +692,28 @@ def run(video, out=None, workers=6, model="large-v3", work=None, edits_path=None
                 n_end, end_reason = k, "logo"
                 log(t0, f"outro auto-trimmed at {k / fps:.2f}s (set \"end\" in {os.path.basename(edits_path)} to change)")
     end_t = n_end / fps
+    import broll
+    bdir = os.path.join(work, "broll")
+    if "broll" not in edits and os.environ.get("REFRAME_BROLL", "1") != "0":
+        if broll.api_key():
+            o = detect_outro(tr, len(plan) / fps)        # never pick B-roll inside an ad read, even uncut (CLI)
+            lim = min(end_t, o[0]) if o else end_t
+            progress("broll", 0)
+            # reference faces for the vision check: the middle of the longest face shots (mostly the hosts)
+            shots = sorted(((e - s, (s + e) / 2 / fps) for s, e in zip(cuts, cuts[1:])
+                            if e / fps < lim and plan[(s + e) // 2]["m"] == "face"), reverse=True)
+            items, cost, notes = broll.find(FF, tr, name, lim, work, sentences, log=lambda m: log(t0, m),
+                                            src=src, ref_times=[t for _, t in shots[:12]])
+            if items is not None:                      # None = picker failed: try again next run
+                edits["broll"] = items
+                json.dump(edits, open(edits_path, "w"), indent=2)
+            open(os.path.join(bdir, "notes.txt"), "w", encoding="utf-8").write("\n".join(notes) + "\n")
+            log(t0, f"b-roll: {len(items or [])} cutaways, OpenRouter ${cost:.4f} for this video (cap ${broll.BUDGET:.2f})")
+        else:
+            log(t0, "b-roll skipped: OPENROUTER_API_KEY not set")
+    if edits.get("broll"):
+        broll.restore(FF, edits["broll"], work)
+        plan, cuts = make_plan(a, edits)
     events = make_captions(tr, edits, end_t)
     write_ass(events, os.path.join(work, "captions_full.ass"))
     # report.txt: what a human / AI agent needs to check the ending (ads, bumpers) and the waveform parts
@@ -666,6 +726,12 @@ def run(video, out=None, workers=6, model="large-v3", work=None, edits_path=None
         if plan[i]["m"] == "wave":
             rep.append(f"  {i / fps:7.2f}s - {j / fps:7.2f}s")
         i = j
+    rep += ["", "b-roll cutaways (delete entries under \"broll\" in the edits file to drop one):"]
+    for b in edits.get("broll") or []:
+        rep.append(f"  {b['at']:7.2f}s +{b.get('dur', 0):.1f}s  {b.get('subject', '')}  <- "
+                   f"{b.get('src', {}).get('title', b['file'])} @ {b.get('src', {}).get('t', 0):.0f}s  [{b.get('thumb', '')}]")
+    if os.path.exists(os.path.join(bdir, "notes.txt")):
+        rep += ["  picker notes:"] + ["    " + l for l in open(os.path.join(bdir, "notes.txt"), encoding="utf-8").read().splitlines()]
     rep += ["", "camera cuts (s): " + " ".join(f"{c / fps:.2f}" for c in cuts[1:-1]), "",
             "transcript, last 90 s of the source (look for ad reads / outro bumper):"]
     for s in tr["segments"]:
@@ -703,14 +769,16 @@ def run(video, out=None, workers=6, model="large-v3", work=None, edits_path=None
         if f.endswith(".mp4") and f not in keep:
             os.remove(os.path.join(work, "chunks", f))
     lst = os.path.join(work, "concat.txt")
-    open(lst, "w").write("".join(f"file '{f.replace(os.sep, '/')}'\n" for f in files))
+    open(lst, "w", encoding="utf-8").write("".join(f"file '{f.replace(os.sep, '/')}'\n" for f in files))
     subprocess.run([FF, "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-i", src,
                     "-map", "0:v", "-map", "1:a", "-c:v", "copy",
                     "-af", f"atrim=0:{end_t:.4f},afade=t=out:st={max(0, end_t - 0.2):.4f}:d=0.2",
                     "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-t", f"{end_t:.4f}",
                     "-movflags", "+faststart", out], check=True)
     result = {"out": out, "duration": len(plan) / fps, "end": end_t, "end_reason": end_reason, "ad_start": ad_t,
-              "encoder": enc_name, "device": tr.get("device")}
+              "encoder": enc_name, "device": tr.get("device"), "broll": len(edits.get("broll") or []),
+              "broll_cost": json.load(open(os.path.join(bdir, "cost.json"))).get("spent")
+              if os.path.exists(os.path.join(bdir, "cost.json")) else 0}
     json.dump(result, open(os.path.join(work, "result.json"), "w"), indent=2)
     log(t0, f"done -> {out}")
     log(t0, f"check the ending in {os.path.join(work, 'report.txt')}; corrections go in {edits_path}")
